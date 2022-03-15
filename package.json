@@ -1,11 +1,15 @@
 {
   "license": "MIT",
   "scripts": {
-    "server": "node server/index.js",
+    "server": "nodemon server/index.js",
     "client": "yarn --cwd client start",
     "dev": "concurrently \"yarn run server\" \"yarn run client\"",
-    "postinstall": "yarn --cwd server install",
-    "build": "yarn --cwd client install && yarn --cwd client build",
-    "start": "yarn run server"
+    "postinstall": "yarn --cwd server install && yarn --cwd client install",
+    "build": "yarn --cwd client build",
+    "start": "node server/index.js"
+  },
+  "devDependencies": {
+    "concurrently": "^7.0.0",
+    "nodemon": "^2.0.15"
   }
 }
