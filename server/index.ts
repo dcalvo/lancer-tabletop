@@ -26,7 +26,7 @@ if (!isDev && cluster.isPrimary) {
   const app = express()
 
   // Priority serve any static files (during production).
-  app.use(express.static(path.resolve(__dirname, "../client/build")))
+  app.use(express.static(path.resolve(__dirname, "../../client/build")))
 
   // Answer API requests.
   app.get("/api", (req, res) => {
@@ -36,7 +36,7 @@ if (!isDev && cluster.isPrimary) {
 
   // All remaining requests return the React app, so it can handle routing.
   app.get("*", (request, response) => {
-    response.sendFile(path.resolve(__dirname, "../client/build", "index.html"))
+    response.sendFile(path.resolve(__dirname, "../../client/build", "index.html"))
   })
 
   app.listen(PORT, () => {

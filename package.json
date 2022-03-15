@@ -6,11 +6,11 @@
   "scripts": {
     "server": "nodemon server/index.ts",
     "client": "yarn --cwd client start",
-    "dev": "concurrently \"yarn run server\" \"yarn run client\"",
+    "dev": "yarn concurrently \"yarn run server\" \"yarn run client\"",
     "postinstall": "yarn --cwd server install && yarn --cwd client install",
-    "build": "yarn --cwd server tsc && yarn --cwd client build",
+    "build": "yarn concurrently \"yarn --cwd server tsc\" \"yarn --cwd client build\"",
     "start": "node server/dist/index.js",
-    "clean": "yarn --cwd server rimraf dist && yarn --cwd client rimraf build"
+    "clean": "yarn concurrently \"yarn --cwd server rimraf dist\" \"yarn --cwd client rimraf build\""
   },
   "devDependencies": {
     "concurrently": "^7.0.0",
