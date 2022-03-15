@@ -1,0 +1,12 @@
+{
+  "ignorePatterns": ["dist/", "**/*.js"],
+  "extends": ["airbnb-base", "airbnb-typescript/base"],
+  "parserOptions": {
+    "project": "./tsconfig.json"
+  },
+  "rules": {
+    "@typescript-eslint/quotes": ["error", "double", { "avoidEscape": true }],
+    "@typescript-eslint/semi": "off",
+    "no-plusplus": "off"
+  }
+}

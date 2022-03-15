@@ -1,15 +1,18 @@
 {
   "license": "MIT",
   "scripts": {
-    "server": "nodemon server/index.js",
+    "server": "nodemon server/index.ts",
     "client": "yarn --cwd client start",
     "dev": "concurrently \"yarn run server\" \"yarn run client\"",
     "postinstall": "yarn --cwd server install && yarn --cwd client install",
-    "build": "yarn --cwd client build",
-    "start": "node server/index.js"
+    "build": "yarn --cwd server tsc && yarn --cwd client build",
+    "start": "node server/dist/index.js",
+    "clean": "yarn --cwd server rimraf dist && yarn --cwd client rimraf build"
   },
   "devDependencies": {
     "concurrently": "^7.0.0",
-    "nodemon": "^2.0.15"
+    "nodemon": "^2.0.15",
+    "rimraf": "^3.0.2",
+    "ts-node": "^10.7.0"
   }
 }

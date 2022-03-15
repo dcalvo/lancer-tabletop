@@ -5,7 +5,7 @@ import "./App.css"
 function App() {
   // TODO: remove
   fetch("/api").then((response) =>
-    response.text().then((text) => console.log(text))
+    response.text().then((text) => console.log(text)),
   )
   return (
     <div className="App">
