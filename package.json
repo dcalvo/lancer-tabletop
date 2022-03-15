@@ -5,7 +5,7 @@
     "client": "yarn --cwd client start",
     "dev": "concurrently \"yarn run server\" \"yarn run client\"",
     "postinstall": "yarn --cwd server install",
-    "build": "yarn --cwd client build",
+    "build": "yarn --cwd client install && yarn --cwd client build",
     "start": "yarn run server"
   }
 }
