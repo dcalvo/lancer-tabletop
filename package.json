@@ -1,5 +1,8 @@
 {
   "license": "MIT",
+  "engines": {
+    "node": "16.x"
+  },
   "scripts": {
     "server": "nodemon server/index.ts",
     "client": "yarn --cwd client start",
