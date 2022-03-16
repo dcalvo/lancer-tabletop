@@ -2,6 +2,7 @@ import express from "express"
 import path from "path"
 import cluster from "cluster"
 import os from "os"
+import webSocket from "./websockets"
 
 const numCPUs = os.cpus().length
 
@@ -39,11 +40,13 @@ if (!isDev && cluster.isPrimary) {
     response.sendFile(path.resolve(__dirname, "../../client/build", "index.html"))
   })
 
-  app.listen(PORT, () => {
+  const server = app.listen(PORT, () => {
     console.error(
       `Node ${
         isDev ? "dev server" : `cluster worker ${process.pid}`
       }: listening on http://localhost:${PORT}`,
     )
   })
+
+  webSocket(server)
 }

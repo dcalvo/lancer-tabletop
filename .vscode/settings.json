@@ -1,3 +1,4 @@
 {
-  "eslint.workingDirectories": ["server/"]
+  "eslint.workingDirectories": ["server/"],
+  "editor.tabSize": 2
 }

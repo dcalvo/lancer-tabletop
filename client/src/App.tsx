@@ -2,24 +2,35 @@ import React from "react"
 import logo from "./logo.svg"
 import "./App.css"
 
+// Determine where to forward requests to
+const serverLocation =
+  process.env.NODE_ENV === "production"
+    ? window.location.origin
+    : `${window.location.protocol}//${window.location.hostname}:5000`
+
+// Create a websocket
+const ws = new WebSocket(serverLocation.replace(/^http/, "ws"))
+
+// Update textbox based on received server updates
+ws.onmessage = (event) => {
+  const message = JSON.parse(event.data)
+  if (message.valueChange) {
+    const textBox = document.getElementById("textBox")
+    if (textBox) (textBox as HTMLInputElement).value = message.valueChange
+  }
+}
+
+// Transmit textbox updates to server
+function handleChange(event: React.ChangeEvent<HTMLInputElement>) {
+  ws.send(JSON.stringify({ valueChange: event.target.value }))
+}
+
 function App() {
-  // TODO: remove
-  fetch("/api").then((response) => response.text().then((text) => console.log(text)))
   return (
     <div className="App">
       <header className="App-header">
         <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
+        <input id="textBox" type="text" onChange={(event) => handleChange(event)} />
       </header>
     </div>
   )
