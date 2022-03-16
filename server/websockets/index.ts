@@ -18,15 +18,18 @@ function setupWebSocket(ws: WebSocket) {
   // Add the client to the tracker
   const userID = getUniqueID()
   clients.set(userID, ws)
+  console.log(`User ${userID} connected`)
 
   // Do client setup, like updating their initial textbox value
   ws.send(JSON.stringify({ valueChange: lastMessage }))
 
   // Handle messaging from the client
   ws.on("message", (data) => {
+    console.log("received a message")
     const message = JSON.parse(data.toString())
     // If the textbox changed, echo its value to all other clients
     if (message.valueChange) {
+      console.log("broadcasting a message")
       lastMessage = message.valueChange
       clients.forEach((websocket) => websocket.send(JSON.stringify(message)))
     }
