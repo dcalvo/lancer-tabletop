@@ -13,7 +13,6 @@ const ws = new WebSocket(serverLocation.replace(/^http/, "ws"))
 
 // Update textbox based on received server updates
 ws.onmessage = (event) => {
-  console.log("received a message")
   const message = JSON.parse(event.data)
   if (message.valueChange) {
     const textBox = document.getElementById("textBox")
@@ -23,7 +22,6 @@ ws.onmessage = (event) => {
 
 // Transmit textbox updates to server
 function handleChange(event: React.ChangeEvent<HTMLInputElement>) {
-  console.log("sending a message")
   ws.send(JSON.stringify({ valueChange: event.target.value }))
 }
 
