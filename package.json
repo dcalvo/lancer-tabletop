@@ -7,7 +7,7 @@
     "server": "nodemon server/index.ts",
     "client": "yarn --cwd client start",
     "dev": "yarn concurrently \"yarn run server\" \"yarn run client\"",
-    "postinstall": "yarn concurrently \"yarn --cwd server install\" \"yarn --cwd client install\"",
+    "postinstall": "yarn --cwd server install && yarn --cwd client install",
     "build": "yarn concurrently \"yarn --cwd server tsc\" \"yarn --cwd client build\"",
     "start": "node server/dist/index.js",
     "clean": "yarn concurrently \"yarn --cwd server rimraf dist\" \"yarn --cwd client rimraf build\""
