@@ -7,11 +7,7 @@ function Pixi({ app }: { app: Application }) {
 
   useEffect(() => {
     // on first render, add to DOM
-    if (canvasRef.current) {
-      canvasRef.current.replaceWith(app.view)
-      app.start()
-    }
-
+    if (canvasRef.current) canvasRef.current.replaceWith(app.view)
     return () => {
       // on unload, stop the app
       app.destroy(true, true)

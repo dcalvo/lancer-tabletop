@@ -7,7 +7,11 @@ import { innerRadius, outerRadius } from "./hex/HexMetrics"
 // Create Pixi.js application
 const appWidth = 800
 const appHeight = 600
-const app = new Application({ width: appWidth, height: appHeight, backgroundColor: 0x1099bb })
+const app = new Application({
+  width: appWidth,
+  height: appHeight,
+  backgroundColor: 0x1099bb,
+})
 
 // Create a HexGrid containing HexCells
 const numHorizontalCells = Math.floor(appWidth / innerRadius)
