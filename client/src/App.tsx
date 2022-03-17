@@ -1,37 +1,26 @@
-import React from "react"
-import logo from "./logo.svg"
+import { Application } from "pixi.js"
+import Pixi from "./components/Pixi"
 import "./App.css"
+import HexGrid from "./hex/HexGrid"
+import { innerRadius, outerRadius } from "./hex/HexMetrics"
 
-// Determine where to forward requests to
-const serverLocation =
-  process.env.NODE_ENV === "production"
-    ? window.location.origin
-    : `${window.location.protocol}//${window.location.hostname}:5000`
+// Create Pixi.js application
+const appWidth = 800
+const appHeight = 600
+const app = new Application({ width: appWidth, height: appHeight, backgroundColor: 0x1099bb })
 
-// Create a websocket
-const ws = new WebSocket(serverLocation.replace(/^http/, "ws"))
+// Create a HexGrid containing HexCells
+const numHorizontalCells = Math.floor(appWidth / innerRadius)
+const numVerticalCells = Math.floor(appHeight / outerRadius)
+const hexGrid = new HexGrid(numHorizontalCells, numVerticalCells)
 
-// Update textbox based on received server updates
-ws.onmessage = (event) => {
-  const message = JSON.parse(event.data)
-  if (message.valueChange) {
-    const textBox = document.getElementById("textBox")
-    if (textBox) (textBox as HTMLInputElement).value = message.valueChange
-  }
-}
-
-// Transmit textbox updates to server
-function handleChange(event: React.ChangeEvent<HTMLInputElement>) {
-  ws.send(JSON.stringify({ valueChange: event.target.value }))
-}
+// Draw it and add to canvas
+app.stage.addChild(hexGrid.draw())
 
 function App() {
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <input id="textBox" type="text" onChange={(event) => handleChange(event)} />
-      </header>
+      <Pixi app={app} />
     </div>
   )
 }
