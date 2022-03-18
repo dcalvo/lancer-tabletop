@@ -64,6 +64,7 @@ function Teleports<T extends Constructor<MovingUnit>>(Base: T) {
 
 class TeleportingUnit extends Teleports(Moves(HexUnit)) {}
 class OtherTeleportingUnit extends Teleports(MovingUnit) {}
+class BlockingMovingUnit extends Blocks(Moves(HexUnit)) {}
 
 // Add a Base property just by constructing the object
 function Foos<T extends Constructor<HexUnit>>(Base: T) {
@@ -71,3 +72,17 @@ function Foos<T extends Constructor<HexUnit>>(Base: T) {
     Foos = 1337
   }
 }
+
+// Narrow unit's capabilities
+function test(unit: HexUnit | MovingUnit | BlockingUnit | BlockingMovingUnit) {
+  console.log("testing...")
+  if ("move" in unit) {
+    console.log("moving!")
+    if (unit.blocking) {
+      console.log("and blocking!")
+    }
+  }
+}
+test(blockingMovingUnit)
+test(movingUnit)
+test(blockingUnit)
