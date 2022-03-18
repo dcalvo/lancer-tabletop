@@ -1,36 +1,12 @@
-import { Application } from "pixi.js"
-import Pixi from "./components/Pixi"
 import "./App.css"
+import Pixi from "./components/Pixi"
 import HexGrid from "./hex/HexGrid"
 import { innerRadius, outerRadius } from "./hex/HexMetrics"
 import { useState } from "react"
-import { Viewport } from "pixi-viewport"
+import PixiApp from "./PixiApp"
 
-// Create Pixi.js application
-const appWidth = window.innerWidth
-const appHeight = window.innerHeight
-const app = new Application({
-  width: appWidth,
-  height: appHeight,
-  backgroundColor: 0x1099bb,
-})
-
-// Create a viewport and add it to the stage
-const viewport = new Viewport({
-  worldWidth: 2 * appWidth,
-  worldHeight: 2 * appHeight,
-  interaction: app.renderer.plugins.interaction,
-})
-app.stage.addChild(viewport)
-
-// Draw it and add to canvas
-viewport
-  .drag()
-  .pinch()
-  .wheel()
-  .clamp({ direction: "all" })
-  .clampZoom({ minScale: 0.5, maxScale: 1 })
-viewport.moveCenter(viewport.worldWidth / 2, viewport.worldHeight / 2)
+// Create Pixi app
+const { app, viewport } = PixiApp(window.innerWidth, window.innerHeight)
 
 // Create a HexGrid containing HexCells
 const numHorizontalCells = Math.floor(800 / innerRadius)
