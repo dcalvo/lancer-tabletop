@@ -64,7 +64,6 @@ function Teleports<T extends Constructor<MovingUnit>>(Base: T) {
 
 class TeleportingUnit extends Teleports(Moves(HexUnit)) {}
 class OtherTeleportingUnit extends Teleports(MovingUnit) {}
-class BlockingMovingUnit extends Blocks(Moves(HexUnit)) {}
 
 // Add a Base property just by constructing the object
 function Foos<T extends Constructor<HexUnit>>(Base: T) {
