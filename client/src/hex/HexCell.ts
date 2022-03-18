@@ -1,15 +1,17 @@
 import { Graphics, Point, Polygon, Text } from "pixi.js"
 import HexCoordinate from "./HexCoordinate"
 import { innerRadius, outerRadius, lineWidth, lineColor, lineAlpha } from "./HexMetrics"
+import HexDirection from "./HexDirection"
 
 export default class HexCell {
   // Public properties
   position: Point
   coordinate: HexCoordinate
+  neighbors: HexCell[] = []
 
   // Private properties
-  corners: Point[] = []
-  cellGraphic: Graphics
+  private corners: Point[] = []
+  private cellGraphic: Graphics
 
   // Constructor
   constructor(position: Point, coordinate: HexCoordinate) {
@@ -45,6 +47,15 @@ export default class HexCell {
     // Draw the cell borders
     this.cellGraphic.lineStyle(lineWidth, lineColor, lineAlpha).drawPolygon(this.corners)
     return this.cellGraphic
+  }
+
+  getNeighbor(direction: HexDirection) {
+    return this.neighbors[direction]
+  }
+
+  setNeighbor(direction: HexDirection, cell: HexCell) {
+    this.neighbors[direction] = cell
+    cell.neighbors[HexDirection.opposite(direction)] = this
   }
   // Private methods
 }
