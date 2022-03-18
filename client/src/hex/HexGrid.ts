@@ -8,10 +8,10 @@ export default class HexGrid {
   // Public properties
   width: number
   height: number
+  gridContainer: Container
 
   // Private properties
   private cells: HexCell[] = []
-  private cellGraphicContainer: Container
 
   // Constructor
   constructor(width: number, height: number) {
@@ -22,31 +22,25 @@ export default class HexGrid {
         this.createCell(x, z, i++)
       }
     }
-    this.cellGraphicContainer = new Container()
+    this.gridContainer = new Container()
   }
 
   // Public methods
   draw() {
     // Destroy the container if it exists
-    if (this.cellGraphicContainer.children.length) {
-      this.cellGraphicContainer.destroy()
-      this.cellGraphicContainer = new Container()
+    if (this.gridContainer.children.length) {
+      this.gridContainer.destroy()
+      this.gridContainer = new Container()
     }
     // Populate the container with each cell's graphic
-    this.cells.forEach((hexCell) => this.cellGraphicContainer.addChild(hexCell.draw()))
+    this.cells.forEach((hexCell) => this.gridContainer.addChild(hexCell.draw()))
     // Enable interaction
-    this.cellGraphicContainer.interactive = true
-    this.cellGraphicContainer.on("pointerdown", this.editCell, this)
-    return this.cellGraphicContainer
+    this.gridContainer.interactive = true
+    this.gridContainer.on("pointerdown", this.editCell, this)
+    return this.gridContainer
   }
 
   // Private methods
-  private editCell(e: InteractionEvent) {
-    const coord = HexCoordinate.fromPosition(e.data.global)
-    const index = coord.x + coord.z * this.width + Math.floor(coord.z / 2)
-    this.cells[index].draw(0xff0000)
-  }
-
   private createCell(x: number, z: number, i: number) {
     // Screen position in (x,y) space
     const position = new Point(
@@ -72,5 +66,11 @@ export default class HexGrid {
 
     // Add it to the hexGrid
     this.cells.push(cell)
+  }
+
+  private editCell(e: InteractionEvent) {
+    const coord = HexCoordinate.fromPosition(e.data.getLocalPosition(this.gridContainer))
+    const index = coord.x + coord.z * this.width + Math.floor(coord.z / 2)
+    this.cells[index].draw(0xff0000)
   }
 }
