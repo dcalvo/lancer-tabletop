@@ -28,14 +28,14 @@ export default class HexCell {
 
     // One-time graphical set-up
     this.cellGraphic = new Graphics()
-    // Draw the cell coordinates
-    const coord = new Text(this.coordinate.toStringOnSeparateLines(), {
-      fontSize: 16,
-      align: "center",
-    })
-    coord.anchor.set(0.5, 0.5)
-    coord.position.copyFrom(this.position)
-    this.cellGraphic.addChild(coord)
+    // // Draw the cell coordinates
+    // const coord = new Text(this.coordinate.toStringOnSeparateLines(), {
+    //   fontSize: 16,
+    //   align: "center",
+    // })
+    // coord.anchor.set(0.5, 0.5)
+    // coord.position.copyFrom(this.position)
+    // this.cellGraphic.addChild(coord)
     // Set the cell hitbox
     this.cellGraphic.hitArea = new Polygon(this.corners)
   }
