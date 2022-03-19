@@ -40,6 +40,33 @@ export default class HexGrid {
     return this.gridContainer
   }
 
+  // TODO: this function can be called multiple times and overlap. No idea how this affects performance on big grids
+  // There is no C# stopAllCoroutines equivalent.
+  async findDistanceTo(cell: HexCell) {
+    const sleep = (milliseconds: number) => {
+      return new Promise((resolve) => setTimeout(resolve, milliseconds))
+    }
+    this.cells.forEach((cell) => {
+      cell.distance = Infinity
+      cell.draw()
+    })
+    const frontier: HexCell[] = [cell]
+    cell.distance = 0
+    cell.draw()
+    while (frontier.length > 0) {
+      const current = frontier.shift()! // frontier is guaranteed to be nonempty
+      for (let d = HexDirection.NE; d <= HexDirection.NW; d++) {
+        await sleep(1 / 60)
+        const neighbor = current.getNeighbor(d)
+        if (neighbor && neighbor.distance === Infinity) {
+          neighbor.distance = current.distance + 1
+          neighbor.draw()
+          frontier.push(neighbor)
+        }
+      }
+    }
+  }
+
   // Private methods
   private createCell(x: number, z: number, i: number) {
     // Screen position in (x,y) space
@@ -71,6 +98,7 @@ export default class HexGrid {
   private editCell(e: InteractionEvent) {
     const coord = HexCoordinate.fromPosition(e.data.getLocalPosition(this.gridContainer))
     const index = coord.x + coord.z * this.width + Math.floor(coord.z / 2)
-    this.cells[index].draw(0xff0000)
+    // this.cells[index].draw(0xff0000)
+    this.findDistanceTo(this.cells[index])
   }
 }

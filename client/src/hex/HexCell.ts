@@ -8,6 +8,7 @@ export default class HexCell {
   position: Point
   coordinate: HexCoordinate
   neighbors: HexCell[] = []
+  distance = Infinity
 
   // Private properties
   private corners: Point[] = []
@@ -28,22 +29,32 @@ export default class HexCell {
 
     // One-time graphical set-up
     this.cellGraphic = new Graphics()
-    // Draw the cell coordinates
-    const coord = new Text(this.coordinate.toStringOnSeparateLines(), {
-      fontSize: 16,
-      align: "center",
-    })
-    coord.anchor.set(0.5, 0.5)
-    coord.position.copyFrom(this.position)
-    this.cellGraphic.addChild(coord)
+
     // Set the cell hitbox
     this.cellGraphic.hitArea = new Polygon(this.corners)
   }
 
   // Public methods
   draw(color?: number) {
+    // Clean up old graphics
     this.cellGraphic.clear()
+    this.cellGraphic.removeChildren(0, this.cellGraphic.children.length)
+
     if (color) this.cellGraphic.beginFill(color)
+    // Draw the cell coordinates
+    // const coord = new Text("this.coordinate.toStringOnSeparateLines()", {
+    //   fontSize: 16,
+    //   align: "center",
+    // })
+    if (this.distance !== Infinity) {
+      const coord = new Text(this.distance.toString(), {
+        fontSize: 32,
+        align: "center",
+      })
+      coord.anchor.set(0.5, 0.5)
+      coord.position.copyFrom(this.position)
+      this.cellGraphic.addChild(coord)
+    }
     // Draw the cell borders
     this.cellGraphic.lineStyle(lineWidth, lineColor, lineAlpha).drawPolygon(this.corners)
     return this.cellGraphic
