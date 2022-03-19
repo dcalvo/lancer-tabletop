@@ -13,6 +13,12 @@ export default class HexCoordinate {
     this.y = -x - z
   }
 
+  distanceTo(other: HexCoordinate) {
+    return (
+      (Math.abs(this.x - other.x) + Math.abs(this.y - other.y) + Math.abs(this.z - other.z)) / 2
+    )
+  }
+
   static fromOffsetCoordinates(x: number, z: number) {
     // undo horizontal shift
     return new HexCoordinate(x - Math.floor(z / 2), z)
