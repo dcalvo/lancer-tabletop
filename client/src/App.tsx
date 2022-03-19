@@ -1,9 +1,10 @@
 import "./App.css"
-import Pixi from "./components/Pixi"
+import Pixi from "./features/Pixi"
 import HexGrid from "./hex/HexGrid"
 import { innerRadius, outerRadius } from "./hex/HexMetrics"
-import { ChangeEvent, useEffect, useState } from "react"
+import { useEffect, useState } from "react"
 import PixiApp from "./PixiApp"
+import HexGridEditorMenu from "./features/HexGridEditor/HexGridEditorMenu"
 
 // Create Pixi app
 const { app, viewport } = PixiApp(window.innerWidth, window.innerHeight)
@@ -55,51 +56,7 @@ function Sidebar() {
         onChange={() => setChecked(!checked)}
       />
       <label htmlFor="viewportControl">Viewport Controls</label>
-      <HexGridMenu />
-    </>
-  )
-}
-
-// Todo: get a UI library oh my god
-// this is super scuffed, buggy, and unusable
-// treat it as an outline
-function HexGridMenu() {
-  const [terrainChecked, setTerrainChecked] = useState(false)
-  const [distanceChecked, setDistanceChecked] = useState(false)
-
-  function handleChange(e: ChangeEvent<HTMLInputElement>) {
-    hexGrid.editMode = e.target.value as "terrain" | "distance"
-  }
-
-  return (
-    <>
-      <div>
-        <h3>Hex Grid</h3>
-        <input
-          type="radio"
-          id="terrain"
-          name="editMode"
-          value={"terrain"}
-          checked={terrainChecked}
-          onChange={(e) => {
-            setTerrainChecked(!distanceChecked)
-            handleChange(e)
-          }}
-        />
-        <label htmlFor="terrain">Terrain</label>
-        <input
-          type="radio"
-          id="distance"
-          name="editMode"
-          value={"distance"}
-          checked={distanceChecked}
-          onChange={(e) => {
-            setDistanceChecked(!distanceChecked)
-            handleChange(e)
-          }}
-        />
-        <label htmlFor="distance">Distance</label>
-      </div>
+      <HexGridEditorMenu />
     </>
   )
 }
