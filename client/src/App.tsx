@@ -2,7 +2,7 @@ import "./App.css"
 import Pixi from "./components/Pixi"
 import HexGrid from "./hex/HexGrid"
 import { innerRadius, outerRadius } from "./hex/HexMetrics"
-import { useState } from "react"
+import { ChangeEvent, useEffect, useState } from "react"
 import PixiApp from "./PixiApp"
 
 // Create Pixi app
@@ -18,27 +18,93 @@ hexGrid.gridContainer.x = (viewport.worldWidth - hexGrid.gridContainer.width) / 
 hexGrid.gridContainer.y = (viewport.worldHeight - hexGrid.gridContainer.height) / 2
 viewport.addChild(hexGrid.gridContainer)
 
+// Todo: refactor such that app is instantiated *after* the layout to avoid weird viewport sizing issues and make it easier to center objects
 function App() {
-  const [checked, setChecked] = useState(true)
+  useEffect(() => {
+    const viewportDiv = document.getElementById("Viewport")
+    if (viewportDiv) app.resizeTo = viewportDiv
+  })
 
-  function togglePaintMode() {
-    // !checked is what the checkbox is about to be
-    !checked ? (viewport.pause = false) : (viewport.pause = true)
-    setChecked(!checked)
-  }
   return (
     <div className="App">
-      <Pixi app={app} />
-      <input
-        type="checkbox"
-        id="viewportControl"
-        name="viewportControl"
-        checked={checked}
-        onChange={togglePaintMode}
-      />
-      <label htmlFor="viewportControl">Viewport Controls</label>
+      <div id="Viewport" className="column left">
+        <Pixi app={app} />
+      </div>
+      <div className="column right">
+        <Sidebar />
+      </div>
     </div>
   )
 }
+
+// TODO: move this to components/Sidebar.tsx
+function Sidebar() {
+  const [checked, setChecked] = useState(false)
+  useEffect(() => {
+    viewport.pause = !checked
+  }, [checked])
+
+  return (
+    <>
+      <h1 className="center">Big Sidebar Menu</h1>
+      <h3 className="center mypassion">graphic design is my passion</h3>
+      <input
+        type="checkbox"
+        id="viewportControl"
+        checked={checked}
+        onChange={() => setChecked(!checked)}
+      />
+      <label htmlFor="viewportControl">Viewport Controls</label>
+      <HexGridMenu />
+    </>
+  )
+}
+
+// Todo: get a UI library oh my god
+// this is super scuffed, buggy, and unusable
+// treat it as an outline
+function HexGridMenu() {
+  const [terrainChecked, setTerrainChecked] = useState(false)
+  const [distanceChecked, setDistanceChecked] = useState(false)
+
+  function handleChange(e: ChangeEvent<HTMLInputElement>) {
+    hexGrid.editMode = e.target.value as "terrain" | "distance"
+  }
+
+  return (
+    <>
+      <div>
+        <h3>Hex Grid</h3>
+        <input
+          type="radio"
+          id="terrain"
+          name="editMode"
+          value={"terrain"}
+          checked={terrainChecked}
+          onChange={(e) => {
+            setTerrainChecked(!distanceChecked)
+            handleChange(e)
+          }}
+        />
+        <label htmlFor="terrain">Terrain</label>
+        <input
+          type="radio"
+          id="distance"
+          name="editMode"
+          value={"distance"}
+          checked={distanceChecked}
+          onChange={(e) => {
+            setDistanceChecked(!distanceChecked)
+            handleChange(e)
+          }}
+        />
+        <label htmlFor="distance">Distance</label>
+      </div>
+    </>
+  )
+}
+
+// TODO: add redux and a UI library
+// UI elements should be able to modify the global state in order for hexgrid (and future global objects) to be able to read from it
 
 export default App
