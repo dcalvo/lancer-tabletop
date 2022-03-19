@@ -59,11 +59,12 @@ export default class HexGrid {
       for (let d = HexDirection.NE; d <= HexDirection.NW; d++) {
         await sleep(1 / 60)
         const neighbor = current.getNeighbor(d)
-        if (neighbor && neighbor.distance === Infinity) {
-          neighbor.distance = current.distance + 1
-          neighbor.draw()
-          frontier.push(neighbor)
+        if (!neighbor || neighbor.distance !== Infinity || neighbor.impassable) {
+          continue
         }
+        neighbor.distance = current.distance + 1
+        neighbor.draw()
+        frontier.push(neighbor)
       }
     }
   }
@@ -102,13 +103,16 @@ export default class HexGrid {
     // editcell is not the right place for this
     switch (this.editMode) {
       case "terrain":
-        console.log("yup")
+        this.cells[index].impassable = true
+        this.cells[index].color = 0x00ff00
+        this.cells[index].draw()
         break
       case "distance":
         this.findDistanceTo(this.cells[index])
         break
       default:
-        this.cells[index].draw(0xff0000)
+        this.cells[index].color = 0xff0000
+        this.cells[index].draw()
     }
   }
 }
