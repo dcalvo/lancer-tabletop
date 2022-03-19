@@ -9,6 +9,8 @@ export default class HexCell {
   coordinate: HexCoordinate
   neighbors: HexCell[] = []
   distance = Infinity
+  color: number | undefined = undefined
+  impassable = false
 
   // Private properties
   private corners: Point[] = []
@@ -35,12 +37,12 @@ export default class HexCell {
   }
 
   // Public methods
-  draw(color?: number) {
+  draw() {
     // Clean up old graphics
     this.cellGraphic.clear()
     this.cellGraphic.removeChildren(0, this.cellGraphic.children.length)
 
-    if (color) this.cellGraphic.beginFill(color)
+    if (this.color) this.cellGraphic.beginFill(this.color)
     // Draw the cell coordinates
     // const coord = new Text("this.coordinate.toStringOnSeparateLines()", {
     //   fontSize: 16,
