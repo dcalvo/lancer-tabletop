@@ -9,6 +9,7 @@ export default class HexGrid {
   width: number
   height: number
   gridContainer: Container
+  editMode: "terrain" | "distance" | "dummy" = "dummy"
 
   // Private properties
   private cells: HexCell[] = []
@@ -98,7 +99,16 @@ export default class HexGrid {
   private editCell(e: InteractionEvent) {
     const coord = HexCoordinate.fromPosition(e.data.getLocalPosition(this.gridContainer))
     const index = coord.x + coord.z * this.width + Math.floor(coord.z / 2)
-    // this.cells[index].draw(0xff0000)
-    this.findDistanceTo(this.cells[index])
+    // editcell is not the right place for this
+    switch (this.editMode) {
+      case "terrain":
+        console.log("yup")
+        break
+      case "distance":
+        this.findDistanceTo(this.cells[index])
+        break
+      default:
+        this.cells[index].draw(0xff0000)
+    }
   }
 }
