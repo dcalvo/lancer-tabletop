@@ -1,4 +1,5 @@
 import { Container, InteractionEvent, Point } from "pixi.js"
+import { store } from "src/store/store"
 import HexCell from "./HexCell"
 import HexCoordinate from "./HexCoordinate"
 import HexDirection from "./HexDirection"
@@ -9,7 +10,7 @@ export default class HexGrid {
   width: number
   height: number
   gridContainer: Container
-  editMode: "terrain" | "distance" | "dummy" = "dummy"
+  editMode: string = "dummy"
 
   // Private properties
   private cells: HexCell[] = []
@@ -24,6 +25,11 @@ export default class HexGrid {
       }
     }
     this.gridContainer = new Container()
+    // TODO: turn this into a proper hook if we Reactify everything?
+    store.subscribe(() => {
+      const state = store.getState()
+      this.editMode = state.hexGridEditor.editMode
+    })
   }
 
   // Public methods
