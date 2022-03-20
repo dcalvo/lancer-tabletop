@@ -30,3 +30,7 @@ html {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
+
+.sidebarElement {
+  padding: 10px;
+}
