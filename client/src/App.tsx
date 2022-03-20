@@ -1,13 +1,9 @@
 import "./App.css"
-import Pixi from "./features/Pixi"
+import Viewport, { app, viewport } from "./features/Viewport/Viewport"
 import HexGrid from "./hex/HexGrid"
 import { innerRadius, outerRadius } from "./hex/HexMetrics"
-import { useEffect, useState } from "react"
-import PixiApp from "./PixiApp"
-import HexGridEditorMenu from "./features/HexGridEditor/HexGridEditorMenu"
-
-// Create Pixi app
-const { app, viewport } = PixiApp(window.innerWidth, window.innerHeight)
+import { useEffect } from "react"
+import Sidebar from "./features/Sidebar/Sidebar"
 
 // Create a HexGrid containing HexCells
 const numHorizontalCells = Math.floor(800 / innerRadius)
@@ -18,8 +14,7 @@ hexGrid.gridContainer.x = (viewport.worldWidth - hexGrid.gridContainer.width) / 
 hexGrid.gridContainer.y = (viewport.worldHeight - hexGrid.gridContainer.height) / 2
 viewport.addChild(hexGrid.gridContainer)
 
-// Todo: refactor such that app is instantiated *after* the layout to avoid weird viewport sizing issues and make it easier to center objects
-function App() {
+export default function App() {
   useEffect(() => {
     const viewportDiv = document.getElementById("Viewport")
     if (viewportDiv) app.resizeTo = viewportDiv
@@ -28,7 +23,7 @@ function App() {
   return (
     <div className="App">
       <div id="Viewport" className="column left">
-        <Pixi app={app} />
+        <Viewport />
       </div>
       <div className="column right">
         <Sidebar />
@@ -36,31 +31,3 @@ function App() {
     </div>
   )
 }
-
-// TODO: move this to components/Sidebar.tsx
-function Sidebar() {
-  const [checked, setChecked] = useState(false)
-  useEffect(() => {
-    viewport.pause = !checked
-  }, [checked])
-
-  return (
-    <>
-      <h1 className="center">Big Sidebar Menu</h1>
-      <h3 className="center mypassion">graphic design is my passion</h3>
-      <input
-        type="checkbox"
-        id="viewportControl"
-        checked={checked}
-        onChange={() => setChecked(!checked)}
-      />
-      <label htmlFor="viewportControl">Viewport Controls</label>
-      <HexGridEditorMenu />
-    </>
-  )
-}
-
-// TODO: add redux and a UI library
-// UI elements should be able to modify the global state in order for hexgrid (and future global objects) to be able to read from it
-
-export default App

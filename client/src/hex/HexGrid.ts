@@ -45,7 +45,7 @@ export default class HexGrid {
     this.gridContainer.on("pointerout", () => (this.pointerDown = false))
 
     // Subscribe to state changes
-    observeStore(selectEditMode, (currentState) => (this.editMode = currentState))
+    observeStore(selectEditMode, (currentEditMode) => (this.editMode = currentEditMode))
   }
 
   // Public methods

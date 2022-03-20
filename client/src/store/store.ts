@@ -1,9 +1,11 @@
 import { configureStore } from "@reduxjs/toolkit"
+import viewportControlReducer from "src/features/ViewportControl/viewportControlSlice"
 import hexGridEditorReducer from "../features/HexGridEditor/hexGridEditorSlice"
 
 export const store = configureStore({
   reducer: {
     hexGridEditor: hexGridEditorReducer,
+    viewportControl: viewportControlReducer,
   },
 })
 

@@ -5,6 +5,10 @@
   "private": true,
   "dependencies": {
     "@craco/craco": "^6.4.3",
+    "@emotion/react": "^11.8.2",
+    "@emotion/styled": "^11.8.1",
+    "@mui/icons-material": "^5.5.1",
+    "@mui/material": "^5.5.1",
     "@pixi-essentials/cull": "^1.1.0",
     "@reduxjs/toolkit": "^1.8.0",
     "@testing-library/jest-dom": "^5.14.1",

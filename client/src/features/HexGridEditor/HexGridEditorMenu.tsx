@@ -6,6 +6,8 @@ import {
   selectShowCoordinates,
 } from "./hexGridEditorSlice"
 
+import { Checkbox, Radio, RadioGroup, FormControlLabel } from "@mui/material"
+
 export default function HexGridEditorMenu() {
   const dispatch = useAppDispatch()
   const currentEditMode = useAppSelector(selectEditMode)
@@ -13,43 +15,21 @@ export default function HexGridEditorMenu() {
 
   return (
     <>
-      <div>
-        <h3>Hex Grid</h3>
-        <input
-          type="radio"
-          id="terrain"
-          name="editMode"
-          value={"terrain"}
-          checked={currentEditMode === "terrain"}
-          onChange={(e) => dispatch(changeEditMode(e.target.value))}
-        />
-        <label htmlFor="terrain">Terrain</label>
-        <input
-          type="radio"
-          id="distance"
-          name="editMode"
-          value={"distance"}
-          checked={currentEditMode === "distance"}
-          onChange={(e) => dispatch(changeEditMode(e.target.value))}
-        />
-        <label htmlFor="distance">Distance</label>
-        <input
-          type="radio"
-          id="dummy"
-          name="editMode"
-          value={"dummy"}
-          checked={currentEditMode === "dummy"}
-          onChange={(e) => dispatch(changeEditMode(e.target.value))}
-        />
-        <label htmlFor="dummy">Dummy</label>
-        <input
-          type="checkbox"
-          id="coords"
-          checked={currentShowCoordinates}
-          onChange={(e) => dispatch(changeShowCoordinates(!currentShowCoordinates))}
-        />
-        <label htmlFor="coords">Show Coordinates</label>
-      </div>
+      <h3>Hex Grid</h3>
+      <RadioGroup
+        value={currentEditMode}
+        onChange={(e) => dispatch(changeEditMode(e.target.value))}
+      >
+        <FormControlLabel label="Terrain" control={<Radio />} value="terrain" />
+        <FormControlLabel label="Distance" control={<Radio />} value="distance" />
+        <FormControlLabel label="Dummy" control={<Radio />} value="dummy" />
+      </RadioGroup>
+      <FormControlLabel
+        label="Show Coordinates"
+        control={<Checkbox />}
+        checked={currentShowCoordinates}
+        onChange={() => dispatch(changeShowCoordinates(!currentShowCoordinates))}
+      />
     </>
   )
 }

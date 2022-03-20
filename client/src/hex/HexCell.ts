@@ -37,7 +37,10 @@ export default class HexCell {
     this.cellGraphic.hitArea = new Polygon(this.corners)
 
     // Subscribe to stage changes
-    observeStore(selectShowCoordinates, (currentState) => (this.displayCoordinates = currentState))
+    observeStore(
+      selectShowCoordinates,
+      (displayCoordinates) => (this.displayCoordinates = displayCoordinates),
+    )
   }
 
   get color() {
