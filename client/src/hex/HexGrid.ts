@@ -1,5 +1,6 @@
 import { Container, InteractionEvent, Point } from "pixi.js"
-import { store } from "src/store/store"
+import { selectEditMode } from "src/features/HexGridEditor/hexGridEditorSlice"
+import { observeStore } from "src/store/store"
 import HexCell from "./HexCell"
 import HexCoordinate from "./HexCoordinate"
 import HexDirection from "./HexDirection"
@@ -11,6 +12,7 @@ export default class HexGrid {
   height: number
   gridContainer: Container
   editMode: string = "dummy"
+  pointerDown = false
 
   // Private properties
   private cells: HexCell[] = []
@@ -19,34 +21,34 @@ export default class HexGrid {
   constructor(width: number, height: number) {
     this.width = width
     this.height = height
+    // Create the grid
     for (let z = 0, i = 0; z < this.height; z++) {
       for (let x = 0; x < this.width; x++) {
         this.createCell(x, z, i++)
       }
     }
+
+    // Create a container with each cell's graphic
     this.gridContainer = new Container()
-    // TODO: turn this into a proper hook if we Reactify everything?
-    store.subscribe(() => {
-      const state = store.getState()
-      this.editMode = state.hexGridEditor.editMode
+    this.cells.forEach((hexCell) => this.gridContainer.addChild(hexCell.draw()))
+
+    // Enable interaction
+    this.gridContainer.interactive = true
+    this.gridContainer.on("pointerdown", (e) => {
+      this.pointerDown = true
+      this.editCell(e)
     })
+    this.gridContainer.on("pointermove", (e) => {
+      if (this.pointerDown) this.editCell(e)
+    })
+    this.gridContainer.on("pointerup", () => (this.pointerDown = false))
+    this.gridContainer.on("pointerout", () => (this.pointerDown = false))
+
+    // Subscribe to state changes
+    observeStore(selectEditMode, (currentState) => (this.editMode = currentState))
   }
 
   // Public methods
-  draw() {
-    // Destroy the container if it exists
-    if (this.gridContainer.children.length) {
-      this.gridContainer.destroy()
-      this.gridContainer = new Container()
-    }
-    // Populate the container with each cell's graphic
-    this.cells.forEach((hexCell) => this.gridContainer.addChild(hexCell.draw()))
-    // Enable interaction
-    this.gridContainer.interactive = true
-    this.gridContainer.on("pointerdown", this.editCell, this)
-    return this.gridContainer
-  }
-
   // TODO: this function can be called multiple times and overlap. No idea how this affects performance on big grids
   // There is no C# stopAllCoroutines equivalent.
   async findDistanceTo(cell: HexCell) {
@@ -55,11 +57,9 @@ export default class HexGrid {
     }
     this.cells.forEach((cell) => {
       cell.distance = Infinity
-      cell.draw()
     })
     const frontier: HexCell[] = [cell]
     cell.distance = 0
-    cell.draw()
     while (frontier.length > 0) {
       const current = frontier.shift()! // frontier is guaranteed to be nonempty
       for (let d = HexDirection.NE; d <= HexDirection.NW; d++) {
@@ -69,7 +69,6 @@ export default class HexGrid {
           continue
         }
         neighbor.distance = current.distance + 1
-        neighbor.draw()
         frontier.push(neighbor)
       }
     }
@@ -111,14 +110,12 @@ export default class HexGrid {
       case "terrain":
         this.cells[index].impassable = true
         this.cells[index].color = 0x00ff00
-        this.cells[index].draw()
         break
       case "distance":
         this.findDistanceTo(this.cells[index])
         break
       default:
         this.cells[index].color = 0xff0000
-        this.cells[index].draw()
     }
   }
 }

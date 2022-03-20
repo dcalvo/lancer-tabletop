@@ -13,7 +13,6 @@ const { app, viewport } = PixiApp(window.innerWidth, window.innerHeight)
 const numHorizontalCells = Math.floor(800 / innerRadius)
 const numVerticalCells = Math.floor(600 / outerRadius)
 const hexGrid = new HexGrid(numHorizontalCells, numVerticalCells)
-hexGrid.draw()
 // Center the HexGrid in the viewport
 hexGrid.gridContainer.x = (viewport.worldWidth - hexGrid.gridContainer.width) / 2
 hexGrid.gridContainer.y = (viewport.worldHeight - hexGrid.gridContainer.height) / 2
