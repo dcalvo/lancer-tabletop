@@ -1,9 +1,15 @@
 import { useAppDispatch, useAppSelector } from "src/store/hooks"
-import { changeEditMode } from "./hexGridEditorSlice"
+import {
+  changeEditMode,
+  changeShowCoordinates,
+  selectEditMode,
+  selectShowCoordinates,
+} from "./hexGridEditorSlice"
 
 export default function HexGridEditorMenu() {
   const dispatch = useAppDispatch()
-  const currentEditMode = useAppSelector((state) => state.hexGridEditor.editMode)
+  const currentEditMode = useAppSelector(selectEditMode)
+  const currentShowCoordinates = useAppSelector(selectShowCoordinates)
 
   return (
     <>
@@ -36,6 +42,13 @@ export default function HexGridEditorMenu() {
           onChange={(e) => dispatch(changeEditMode(e.target.value))}
         />
         <label htmlFor="dummy">Dummy</label>
+        <input
+          type="checkbox"
+          id="coords"
+          checked={currentShowCoordinates}
+          onChange={(e) => dispatch(changeShowCoordinates(!currentShowCoordinates))}
+        />
+        <label htmlFor="coords">Show Coordinates</label>
       </div>
     </>
   )
