@@ -8,9 +8,9 @@ import { selectShowCoordinates } from "src/features/HexGridEditor/hexGridEditorS
 export default class HexCell {
   position: Point
   coordinate: HexCoordinate
-  neighbors: HexCell[] = []
   impassable = false
 
+  private neighbors: HexCell[] = []
   private _color: number | undefined = undefined
   private corners: Point[] = []
   private cellGraphic: Graphics

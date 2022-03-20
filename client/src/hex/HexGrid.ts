@@ -1,5 +1,5 @@
-import { Container, InteractionEvent, Point } from "pixi.js"
-import { selectEditMode } from "src/features/HexGridEditor/hexGridEditorSlice"
+import { Container, Point } from "pixi.js"
+import { selectBrush, selectEditMode } from "src/features/HexGridEditor/hexGridEditorSlice"
 import { observeStore } from "src/store/store"
 import HexCell from "./HexCell"
 import HexCoordinate from "./HexCoordinate"
@@ -8,22 +8,23 @@ import { innerRadius, outerRadius } from "./HexMetrics"
 
 export default class HexGrid {
   // Public properties
-  width: number
-  height: number
   gridContainer: Container
-  editMode: string = "dummy"
-  pointerDown = false
 
   // Private properties
+  private cellCountX: number
+  private cellCountZ: number
   private cells: HexCell[] = []
+  private pointerDown = false
+  private editMode = ""
+  private brushSize = 1
 
   // Constructor
   constructor(width: number, height: number) {
-    this.width = width
-    this.height = height
+    this.cellCountX = width
+    this.cellCountZ = height
     // Create the grid
-    for (let z = 0, i = 0; z < this.height; z++) {
-      for (let x = 0; x < this.width; x++) {
+    for (let z = 0, i = 0; z < this.cellCountZ; z++) {
+      for (let x = 0; x < this.cellCountX; x++) {
         this.createCell(x, z, i++)
       }
     }
@@ -36,16 +37,21 @@ export default class HexGrid {
     this.gridContainer.interactive = true
     this.gridContainer.on("pointerdown", (e) => {
       this.pointerDown = true
-      this.editCell(e)
+      const centerCell = this.positionToCell(e.data.getLocalPosition(this.gridContainer))
+      this.editCells(centerCell)
     })
     this.gridContainer.on("pointermove", (e) => {
-      if (this.pointerDown) this.editCell(e)
+      if (this.pointerDown) {
+        const centerCell = this.positionToCell(e.data.getLocalPosition(this.gridContainer))
+        this.editCells(centerCell)
+      }
     })
     this.gridContainer.on("pointerup", () => (this.pointerDown = false))
     this.gridContainer.on("pointerout", () => (this.pointerDown = false))
 
     // Subscribe to state changes
     observeStore(selectEditMode, (currentEditMode) => (this.editMode = currentEditMode))
+    observeStore(selectBrush, (currentBrush) => (this.brushSize = currentBrush.size))
   }
 
   // Public methods
@@ -74,6 +80,21 @@ export default class HexGrid {
     }
   }
 
+  positionToCell(position: Point) {
+    // position SHOULD be a Point local to this.gridContainer
+    const coord = HexCoordinate.fromPosition(position)
+    const index = coord.X + coord.Z * this.cellCountX + Math.floor(coord.Z / 2)
+    return this.cells[index]
+  }
+
+  coordinateToCell(coordinate: HexCoordinate) {
+    const z = coordinate.Z
+    if (z < 0 || z >= this.cellCountZ) return null
+    const x = coordinate.X + Math.floor(z / 2)
+    if (x < 0 || x >= this.cellCountX) return null
+    return this.cells[x + z * this.cellCountX]
+  }
+
   // Private methods
   private createCell(x: number, z: number, i: number) {
     // Screen position in (x,y) space
@@ -90,11 +111,12 @@ export default class HexGrid {
     if (x > 0) cell.setNeighbor(HexDirection.W, this.cells[i - 1])
     if (z > 0) {
       if (z % 2 === 0) {
-        cell.setNeighbor(HexDirection.SE, this.cells[i - this.width])
-        if (x > 0) cell.setNeighbor(HexDirection.SW, this.cells[i - this.width - 1])
+        cell.setNeighbor(HexDirection.NE, this.cells[i - this.cellCountX])
+        if (x > 0) cell.setNeighbor(HexDirection.NW, this.cells[i - this.cellCountX - 1])
       } else {
-        cell.setNeighbor(HexDirection.SW, this.cells[i - this.width])
-        if (x < this.width - 1) cell.setNeighbor(HexDirection.SE, this.cells[i - this.width + 1])
+        cell.setNeighbor(HexDirection.NW, this.cells[i - this.cellCountX])
+        if (x < this.cellCountX - 1)
+          cell.setNeighbor(HexDirection.NE, this.cells[i - this.cellCountX + 1])
       }
     }
 
@@ -102,20 +124,38 @@ export default class HexGrid {
     this.cells.push(cell)
   }
 
-  private editCell(e: InteractionEvent) {
-    const coord = HexCoordinate.fromPosition(e.data.getLocalPosition(this.gridContainer))
-    const index = coord.x + coord.z * this.width + Math.floor(coord.z / 2)
-    // editcell is not the right place for this
-    switch (this.editMode) {
-      case "terrain":
-        this.cells[index].impassable = true
-        this.cells[index].color = 0x00ff00
-        break
-      case "distance":
-        this.findDistanceTo(this.cells[index])
-        break
-      default:
-        this.cells[index].color = 0xff0000
+  private editCells(center: HexCell) {
+    const centerX = center.coordinate.X
+    const centerZ = center.coordinate.Z
+
+    // Top half + middle
+    for (let r = 0, z = centerZ - this.brushSize; z <= centerZ; z++, r++) {
+      for (let x = centerX - r; x <= centerX + this.brushSize; x++) {
+        this.editCell(this.coordinateToCell(new HexCoordinate(x, z)))
+      }
+    }
+
+    // Bottom half
+    for (let r = this.brushSize, z = centerZ + 1; z <= centerZ + this.brushSize; z++, r--) {
+      for (let x = centerX - this.brushSize; x < centerX + r; x++) {
+        this.editCell(this.coordinateToCell(new HexCoordinate(x, z)))
+      }
+    }
+  }
+
+  private editCell(cell: HexCell | null) {
+    if (cell) {
+      switch (this.editMode) {
+        case "terrain":
+          cell.impassable = true
+          cell.color = 0x00ff00
+          break
+        case "distance":
+          if (this.brushSize === 0) this.findDistanceTo(cell)
+          break
+        default:
+          cell.color = 0xff0000
+      }
     }
   }
 }
