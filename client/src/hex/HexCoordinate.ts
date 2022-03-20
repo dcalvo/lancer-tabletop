@@ -2,20 +2,20 @@ import { Point } from "pixi.js"
 import { innerRadius, outerRadius } from "./HexMetrics"
 
 export default class HexCoordinate {
-  x: number
-  y: number
-  z: number
+  X: number
+  Y: number
+  Z: number
 
   constructor(x: number, z: number) {
-    this.x = x
-    this.z = z
+    this.X = x
+    this.Z = z
     // all coordinates sum to 0, derive y from x and z
-    this.y = -x - z
+    this.Y = -x - z
   }
 
   distanceTo(other: HexCoordinate) {
     return (
-      (Math.abs(this.x - other.x) + Math.abs(this.y - other.y) + Math.abs(this.z - other.z)) / 2
+      (Math.abs(this.X - other.X) + Math.abs(this.Y - other.Y) + Math.abs(this.Z - other.Z)) / 2
     )
   }
 
@@ -48,10 +48,10 @@ export default class HexCoordinate {
   }
 
   toString() {
-    return `(${this.x}, ${this.y}, ${this.z})`
+    return `(${this.X}, ${this.Y}, ${this.Z})`
   }
 
   toStringOnSeparateLines() {
-    return `${this.x}\n${this.y}\n${this.z}`
+    return `${this.X}\n${this.Y}\n${this.Z}`
   }
 }
