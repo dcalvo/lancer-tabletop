@@ -6,8 +6,10 @@ export default function Sidebar() {
     <>
       <h1 className="center">Big Sidebar Menu</h1>
       <h3 className="center mypassion">graphic design is my passion</h3>
-      <ViewportControlMenu />
-      <HexGridEditorMenu />
+      <div className="sidebarElement">
+        <ViewportControlMenu />
+        <HexGridEditorMenu />
+      </div>
     </>
   )
 }
