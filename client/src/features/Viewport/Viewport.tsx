@@ -13,6 +13,7 @@ const app = new Application({
   width,
   height,
   backgroundColor: 0x1099bb,
+  antialias: true,
 })
 
 // Create culling hook
