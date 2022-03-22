@@ -1,18 +1,18 @@
 import "./App.css"
 import Viewport, { app, viewport } from "./features/Viewport/Viewport"
 import HexGrid from "./hex/HexGrid"
-import { innerRadius, outerRadius } from "./hex/HexMetrics"
+import { chunkSizeX, chunkSizeZ, innerRadius, outerRadius } from "./hex/HexMetrics"
 import { useEffect } from "react"
 import Sidebar from "./features/Sidebar/Sidebar"
 
 // Create a HexGrid containing HexCells
-const numHorizontalCells = Math.floor(800 / innerRadius)
-const numVerticalCells = Math.floor(600 / outerRadius)
+const numHorizontalCells = Math.floor(800 / innerRadius / chunkSizeX)
+const numVerticalCells = Math.floor(600 / outerRadius / chunkSizeZ)
 const hexGrid = new HexGrid(numHorizontalCells, numVerticalCells)
 // Center the HexGrid in the viewport
-hexGrid.gridContainer.x = (viewport.worldWidth - hexGrid.gridContainer.width) / 2
-hexGrid.gridContainer.y = (viewport.worldHeight - hexGrid.gridContainer.height) / 2
-viewport.addChild(hexGrid.gridContainer)
+hexGrid.container.x = (viewport.worldWidth - hexGrid.container.width) / 2
+hexGrid.container.y = (viewport.worldHeight - hexGrid.container.height) / 2
+viewport.addChild(hexGrid.container)
 
 export default function App() {
   useEffect(() => {
