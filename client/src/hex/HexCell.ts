@@ -1,9 +1,15 @@
-import { Graphics, Point, Polygon, Text } from "pixi.js"
+import { Graphics, Point, Polygon, Sprite, Text } from "pixi.js"
 import HexCoordinate from "./HexCoordinate"
 import { innerRadius, outerRadius, lineWidth, lineColor, lineAlpha } from "./HexMetrics"
 import HexDirection from "./HexDirection"
 import { observeStore } from "src/store/store"
 import { selectShowCoordinates } from "src/features/HexGridEditor/hexGridEditorSlice"
+import { app } from "src/features/Viewport/Viewport"
+
+const highlightGraphic = new Graphics()
+const highlightCorners = getCorners(new Point(0, 0), 0.8)
+highlightGraphic.lineStyle(5, 0xffffff, 1).drawPolygon(highlightCorners)
+const highlightTexture = app.renderer.generateTexture(highlightGraphic)
 
 function getCorners(position: Point, scale = 1) {
   const { x, y } = position
@@ -32,11 +38,10 @@ export default class HexCell {
   private neighbors: HexCell[] = []
   private _color: number | undefined = undefined
   private cellLabel: Text
-  private coordinateGraphic: Text
+  private coordinateLabel: Text
   private cellGraphic = new Graphics()
   private cellCorners: Point[] = []
-  private highlightGraphic = new Graphics()
-  private highlightCorners: Point[] = []
+  private highlightSprite = new Sprite()
 
   // Constructor
   constructor(position: Point, coordinate: HexCoordinate) {
@@ -45,9 +50,10 @@ export default class HexCell {
     this.cellCorners = getCorners(this.position)
     this.cellGraphic.hitArea = new Polygon(this.cellCorners)
 
-    // Set up Graphics children
-    this.highlightCorners = getCorners(this.position, 0.8)
-    this.cellGraphic.addChild(this.highlightGraphic)
+    // Set up Graphics children (but defer adding them)
+    this.highlightSprite = Sprite.from(highlightTexture)
+    this.highlightSprite.anchor.set(0.5, 0.5)
+    this.highlightSprite.position.copyFrom(this.position)
 
     this.cellLabel = new Text("", {
       fontSize: 32,
@@ -55,21 +61,18 @@ export default class HexCell {
     })
     this.cellLabel.anchor.set(0.5, 0.5)
     this.cellLabel.position.copyFrom(this.position)
-    this.cellLabel.renderable = false
-    this.cellGraphic.addChild(this.cellLabel)
 
-    this.coordinateGraphic = new Text(this.coordinate.toStringOnSeparateLines(), {
+    this.coordinateLabel = new Text(this.coordinate.toStringOnSeparateLines(), {
       fontSize: 16,
       align: "center",
     })
-    this.coordinateGraphic.anchor.set(0.5, 0.5)
-    this.coordinateGraphic.position.copyFrom(this.position)
-    this.cellGraphic.addChild(this.coordinateGraphic)
+    this.coordinateLabel.cacheAsBitmap = true
+    this.coordinateLabel.anchor.set(0.5, 0.5)
+    this.coordinateLabel.position.copyFrom(this.position)
 
     // Subscribe to stage changes
-    observeStore(
-      selectShowCoordinates,
-      (displayCoordinates) => (this.coordinateGraphic.renderable = displayCoordinates),
+    observeStore(selectShowCoordinates, (displayCoordinates) =>
+      displayCoordinates ? this.enableCoordText() : this.disableCoordText(),
     )
   }
 
@@ -98,19 +101,27 @@ export default class HexCell {
   setLabel(label: string | null) {
     if (label) {
       this.cellLabel.text = label
-      this.cellLabel.renderable = true
+      this.cellGraphic.addChild(this.cellLabel)
     } else {
-      this.cellLabel.renderable = false
+      this.cellGraphic.removeChild(this.cellLabel)
     }
   }
 
   enableHighlight(color: number) {
-    this.highlightGraphic.lineStyle(5, color, 1).drawPolygon(this.highlightCorners)
-    this.highlightGraphic.renderable = true
+    this.highlightSprite.tint = color
+    this.cellGraphic.addChild(this.highlightSprite)
   }
 
   disableHighlight() {
-    this.highlightGraphic.renderable = false
+    this.cellGraphic.removeChild(this.highlightSprite)
+  }
+
+  enableCoordText() {
+    this.cellGraphic.addChild(this.coordinateLabel)
+  }
+
+  disableCoordText() {
+    this.cellGraphic.removeChild(this.coordinateLabel)
   }
 
   draw() {

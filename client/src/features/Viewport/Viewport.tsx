@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react"
-import { Application, DisplayObject } from "pixi.js"
+import { Application } from "pixi.js"
 import { Viewport } from "pixi-viewport"
 import { Cull } from "@pixi-essentials/cull"
 import { selectControlsEnabled } from "../ViewportControl/viewportControlSlice"
@@ -27,9 +27,8 @@ const viewport = new Viewport({
   interaction: app.renderer.plugins.interaction,
 })
 observeStore(selectControlsEnabled, (controlsEnabled) => (viewport.pause = !controlsEnabled))
+cull.add(viewport)
 
-// Create a hook to add children to culling automatically
-viewport.on("childAdded", (child: DisplayObject) => cull.add(child))
 viewport
   .drag()
   .pinch()
