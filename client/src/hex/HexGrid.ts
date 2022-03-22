@@ -19,9 +19,13 @@ export default class HexGrid {
   private brushSize = 1
   private brushType = ""
   private searchFrontier = new HexCellPriorityQueue()
+  private searchFrontierPhase = 0
   private isDragging = false
   private searchFromCell: HexCell | null = null
   private searchToCell: HexCell | null = null
+  private currentPathFrom: HexCell | null = null
+  private currentPathTo: HexCell | null = null
+  private currentPathExists = false
 
   // Constructor
   constructor(width: number, height: number) {
@@ -73,32 +77,37 @@ export default class HexGrid {
     switch (e.type) {
       case "pointerdown":
         this.isDragging = true
-        this.searchFromCell = currentCell
-        if (!this.editMode) this.searchFromCell.enableHighlight(0x0000ff)
+        if (!this.editMode) {
+          this.searchFromCell = currentCell
+          this.searchFromCell.enableHighlight(0x0000ff)
+        }
         break
       case "pointermove":
         if (!this.isDragging) return
         if (!this.editMode) {
-          this.searchToCell?.disableHighlight()
-          if (currentCell !== this.searchFromCell) {
+          if (this.searchToCell && currentCell === this.currentPathFrom) {
+            this.searchToCell.disableHighlight()
+            this.searchToCell.setLabel(null)
+            this.searchToCell = null
+          }
+          if (currentCell !== this.searchFromCell && currentCell !== this.searchToCell) {
+            this.searchToCell?.disableHighlight()
             this.searchToCell = currentCell
             this.searchToCell.enableHighlight(0xff0000)
+            if (this.searchFromCell && this.searchToCell)
+              this.findPath(this.searchFromCell, this.searchToCell)
           }
         }
         break
       case "pointerup":
-        this.isDragging = false
-        if (!this.editMode) {
-          if (this.searchFromCell && this.searchToCell)
-            this.findPath(this.searchFromCell, this.searchToCell)
-        }
-        return
       case "pointerout":
         this.isDragging = false
-        // this.searchFromCell?.disableHighlight()
-        // this.searchToCell?.disableHighlight()
-        this.searchFromCell = null
-        this.searchToCell = null
+        if (!this.editMode) {
+          if (currentCell === this.searchFromCell) {
+            this.searchFromCell.disableHighlight()
+            this.clearPath()
+          }
+        }
         return
       default:
         return
@@ -110,36 +119,70 @@ export default class HexGrid {
     }
   }
 
-  private findPath(fromCell: HexCell, toCell: HexCell) {
+  private findPath(fromCell: HexCell, toCell: HexCell, speed = 1) {
+    this.clearPath()
+    this.currentPathFrom = fromCell
+    this.currentPathTo = toCell
+    this.currentPathExists = this.search(fromCell, toCell)
+    this.showPath(speed)
+  }
+
+  private showPath(speed: number) {
+    if (this.currentPathExists) {
+      let current = this.currentPathTo as HexCell
+      while (current !== this.currentPathFrom) {
+        const turn = current.distance / speed
+        current.setLabel(turn.toString())
+        current.enableHighlight(0xffffff)
+        current = current.pathFrom
+      }
+    }
+    this.currentPathFrom?.enableHighlight(0x0000ff)
+    this.currentPathTo?.enableHighlight(0xff0000)
+  }
+
+  private clearPath() {
+    if (this.currentPathExists) {
+      let current = this.currentPathTo as HexCell
+      while (current !== this.currentPathFrom) {
+        current.setLabel(null)
+        current.disableHighlight()
+        current = current.pathFrom
+      }
+      current.disableHighlight()
+      this.currentPathExists = false
+    } else if (this.currentPathFrom) {
+      this.currentPathFrom.disableHighlight()
+      this.currentPathTo?.disableHighlight()
+    }
+    this.currentPathFrom = this.currentPathTo = null
+  }
+
+  private search(fromCell: HexCell, toCell: HexCell) {
+    this.searchFrontierPhase += 2
     this.searchFrontier.clear()
-    this.cells.forEach((cell) => {
-      cell.distance = Infinity
-    })
+    // If searchPhase % 2 == 0, cell hasn't been reached yet.
+    // If == 1, cell is in the frontier. If == 2, cell has been removed from frontier.
+    fromCell.searchPhase = this.searchFrontierPhase
     fromCell.distance = 0
     this.searchFrontier.enqueue(fromCell)
     while (this.searchFrontier.count > 0) {
       let current = this.searchFrontier.dequeue()
-      if (current === toCell) {
-        current = current.pathFrom
-        while (current !== fromCell) {
-          current.enableHighlight(0xffffff)
-          current = current.pathFrom
-        }
-        break
-      }
+      current.searchPhase += 1
+      if (current === toCell) return true
       for (let d = HexDirection.NE; d <= HexDirection.NW; d++) {
         const neighbor = current.getNeighbor(d)
-        if (!neighbor) continue
+        if (!neighbor || neighbor.searchPhase > this.searchFrontierPhase) continue
         if (neighbor.impassable) continue
         let distance = current.distance
-        if (current.hasRoad()) {
-          // base distance increase
+        if (true) {
           distance += 1
         } else {
           // other terrain movement effects, difficult terrain, etc.
           distance += 10
         }
-        if (neighbor.distance === Infinity) {
+        if (neighbor.searchPhase < this.searchFrontierPhase) {
+          neighbor.searchPhase = this.searchFrontierPhase
           neighbor.distance = distance
           neighbor.pathFrom = current
           neighbor.searchHeuristic = neighbor.coordinate.distanceTo(toCell.coordinate)
@@ -152,6 +195,7 @@ export default class HexGrid {
         }
       }
     }
+    return false
   }
 
   private createCell(x: number, z: number, i: number) {
@@ -207,12 +251,9 @@ export default class HexGrid {
         case "terrain":
           cell.impassable = true
           cell.color = 0x00ff00
-          cell.disableHighlight()
-          cell.enableHighlight(0xff0000)
           break
         default:
           cell.color = 0xff0000
-          cell.enableHighlight(0x0000ff)
       }
     }
   }
