@@ -4,6 +4,7 @@ import { Checkbox, Radio, RadioGroup, Slider, FormControlLabel, Stack } from "@m
 import HexIcon from "@mui/icons-material/Hexagon"
 import {
   changeBrushSize,
+  changeBrushType,
   changeEditMode,
   changeShowCoordinates,
   selectBrush,
@@ -21,12 +22,17 @@ export default function HexGridEditorMenu() {
   return (
     <>
       <h3>Hex Grid</h3>
+      <FormControlLabel
+        label="Edit Mode"
+        control={<Checkbox />}
+        checked={currentEditMode}
+        onChange={() => dispatch(changeEditMode(!currentEditMode))}
+      />
       <RadioGroup
-        value={currentEditMode}
-        onChange={(e) => dispatch(changeEditMode(e.target.value))}
+        value={currentBrush.type}
+        onChange={(e) => dispatch(changeBrushType(e.target.value))}
       >
         <FormControlLabel label="Terrain" control={<Radio />} value="terrain" />
-        <FormControlLabel label="Distance" control={<Radio />} value="distance" />
         <FormControlLabel label="Dummy" control={<Radio />} value="dummy" />
       </RadioGroup>
       <FormControlLabel

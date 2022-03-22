@@ -2,6 +2,7 @@ import { Container, Point } from "pixi.js"
 import { selectBrush, selectEditMode } from "src/features/HexGridEditor/hexGridEditorSlice"
 import { observeStore } from "src/store/store"
 import HexCell from "./HexCell"
+import HexCellPriorityQueue from "./HexCellPriorityQueue"
 import HexCoordinate from "./HexCoordinate"
 import HexDirection from "./HexDirection"
 import { innerRadius, outerRadius } from "./HexMetrics"
@@ -14,9 +15,17 @@ export default class HexGrid {
   private cellCountX: number
   private cellCountZ: number
   private cells: HexCell[] = []
-  private pointerDown = false
-  private editMode = ""
+  private editMode = false
   private brushSize = 1
+  private brushType = ""
+  private searchFrontier = new HexCellPriorityQueue()
+  private searchFrontierPhase = 0
+  private isDragging = false
+  private searchFromCell: HexCell | null = null
+  private searchToCell: HexCell | null = null
+  private currentPathFrom: HexCell | null = null
+  private currentPathTo: HexCell | null = null
+  private currentPathExists = false
 
   // Constructor
   constructor(width: number, height: number) {
@@ -35,51 +44,18 @@ export default class HexGrid {
 
     // Enable interaction
     this.gridContainer.interactive = true
-    this.gridContainer.on("pointerdown", (e) => {
-      this.pointerDown = true
-      const centerCell = this.positionToCell(e.data.getLocalPosition(this.gridContainer))
-      this.editCells(centerCell)
-    })
-    this.gridContainer.on("pointermove", (e) => {
-      if (this.pointerDown) {
-        const centerCell = this.positionToCell(e.data.getLocalPosition(this.gridContainer))
-        this.editCells(centerCell)
-      }
-    })
-    this.gridContainer.on("pointerup", () => (this.pointerDown = false))
-    this.gridContainer.on("pointerout", () => (this.pointerDown = false))
+    this.gridContainer.on("pointerdown", this.handleInput, this)
+    this.gridContainer.on("pointermove", this.handleInput, this)
+    this.gridContainer.on("pointerup", this.handleInput, this)
+    this.gridContainer.on("pointerout", this.handleInput, this)
 
     // Subscribe to state changes
     observeStore(selectEditMode, (currentEditMode) => (this.editMode = currentEditMode))
     observeStore(selectBrush, (currentBrush) => (this.brushSize = currentBrush.size))
+    observeStore(selectBrush, (currentBrush) => (this.brushType = currentBrush.type))
   }
 
   // Public methods
-  // TODO: this function can be called multiple times and overlap. No idea how this affects performance on big grids
-  // There is no C# stopAllCoroutines equivalent.
-  async findDistanceTo(cell: HexCell) {
-    const sleep = (milliseconds: number) => {
-      return new Promise((resolve) => setTimeout(resolve, milliseconds))
-    }
-    this.cells.forEach((cell) => {
-      cell.distance = Infinity
-    })
-    const frontier: HexCell[] = [cell]
-    cell.distance = 0
-    while (frontier.length > 0) {
-      const current = frontier.shift()! // frontier is guaranteed to be nonempty
-      for (let d = HexDirection.NE; d <= HexDirection.NW; d++) {
-        await sleep(1 / 60)
-        const neighbor = current.getNeighbor(d)
-        if (!neighbor || neighbor.distance !== Infinity || neighbor.impassable) {
-          continue
-        }
-        neighbor.distance = current.distance + 1
-        frontier.push(neighbor)
-      }
-    }
-  }
-
   positionToCell(position: Point) {
     // position SHOULD be a Point local to this.gridContainer
     const coord = HexCoordinate.fromPosition(position)
@@ -96,6 +72,132 @@ export default class HexGrid {
   }
 
   // Private methods
+  private handleInput(e: any) {
+    const currentCell = this.positionToCell(e.data.getLocalPosition(this.gridContainer))
+    switch (e.type) {
+      case "pointerdown":
+        this.isDragging = true
+        if (!this.editMode) {
+          this.searchFromCell = currentCell
+          this.searchFromCell.enableHighlight(0x0000ff)
+        }
+        break
+      case "pointermove":
+        if (!this.isDragging) return
+        if (!this.editMode) {
+          if (this.searchToCell && currentCell === this.currentPathFrom) {
+            this.searchToCell.disableHighlight()
+            this.searchToCell.setLabel(null)
+            this.searchToCell = null
+          }
+          if (currentCell !== this.searchFromCell && currentCell !== this.searchToCell) {
+            this.searchToCell?.disableHighlight()
+            this.searchToCell = currentCell
+            this.searchToCell.enableHighlight(0xff0000)
+            if (this.searchFromCell && this.searchToCell)
+              this.findPath(this.searchFromCell, this.searchToCell)
+          }
+        }
+        break
+      case "pointerup":
+      case "pointerout":
+        this.isDragging = false
+        if (!this.editMode) {
+          if (currentCell === this.searchFromCell) {
+            this.searchFromCell.disableHighlight()
+            this.clearPath()
+          }
+        }
+        return
+      default:
+        return
+    }
+
+    if (this.editMode) {
+      this.editCells(currentCell)
+      return
+    }
+  }
+
+  private findPath(fromCell: HexCell, toCell: HexCell, speed = 1) {
+    this.clearPath()
+    this.currentPathFrom = fromCell
+    this.currentPathTo = toCell
+    this.currentPathExists = this.search(fromCell, toCell)
+    this.showPath(speed)
+  }
+
+  private showPath(speed: number) {
+    if (this.currentPathExists) {
+      let current = this.currentPathTo as HexCell
+      while (current !== this.currentPathFrom) {
+        const turn = current.distance / speed
+        current.setLabel(turn.toString())
+        current.enableHighlight(0xffffff)
+        current = current.pathFrom
+      }
+    }
+    this.currentPathFrom?.enableHighlight(0x0000ff)
+    this.currentPathTo?.enableHighlight(0xff0000)
+  }
+
+  private clearPath() {
+    if (this.currentPathExists) {
+      let current = this.currentPathTo as HexCell
+      while (current !== this.currentPathFrom) {
+        current.setLabel(null)
+        current.disableHighlight()
+        current = current.pathFrom
+      }
+      current.disableHighlight()
+      this.currentPathExists = false
+    } else if (this.currentPathFrom) {
+      this.currentPathFrom.disableHighlight()
+      this.currentPathTo?.disableHighlight()
+    }
+    this.currentPathFrom = this.currentPathTo = null
+  }
+
+  private search(fromCell: HexCell, toCell: HexCell) {
+    this.searchFrontierPhase += 2
+    this.searchFrontier.clear()
+    // If searchPhase % 2 == 0, cell hasn't been reached yet.
+    // If == 1, cell is in the frontier. If == 2, cell has been removed from frontier.
+    fromCell.searchPhase = this.searchFrontierPhase
+    fromCell.distance = 0
+    this.searchFrontier.enqueue(fromCell)
+    while (this.searchFrontier.count > 0) {
+      let current = this.searchFrontier.dequeue()
+      current.searchPhase += 1
+      if (current === toCell) return true
+      for (let d = HexDirection.NE; d <= HexDirection.NW; d++) {
+        const neighbor = current.getNeighbor(d)
+        if (!neighbor || neighbor.searchPhase > this.searchFrontierPhase) continue
+        if (neighbor.impassable) continue
+        let distance = current.distance
+        if (true) {
+          distance += 1
+        } else {
+          // other terrain movement effects, difficult terrain, etc.
+          distance += 10
+        }
+        if (neighbor.searchPhase < this.searchFrontierPhase) {
+          neighbor.searchPhase = this.searchFrontierPhase
+          neighbor.distance = distance
+          neighbor.pathFrom = current
+          neighbor.searchHeuristic = neighbor.coordinate.distanceTo(toCell.coordinate)
+          this.searchFrontier.enqueue(neighbor)
+        } else if (distance < neighbor.distance) {
+          const oldPriority = neighbor.searchPriority
+          neighbor.distance = distance
+          neighbor.pathFrom = current
+          this.searchFrontier.change(neighbor, oldPriority)
+        }
+      }
+    }
+    return false
+  }
+
   private createCell(x: number, z: number, i: number) {
     // Screen position in (x,y) space
     const position = new Point(
@@ -145,13 +247,10 @@ export default class HexGrid {
 
   private editCell(cell: HexCell | null) {
     if (cell) {
-      switch (this.editMode) {
+      switch (this.brushType) {
         case "terrain":
           cell.impassable = true
           cell.color = 0x00ff00
-          break
-        case "distance":
-          if (this.brushSize === 0) this.findDistanceTo(cell)
           break
         default:
           cell.color = 0xff0000

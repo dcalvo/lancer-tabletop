@@ -3,22 +3,24 @@ import { RootState } from "src/store/store"
 
 // State
 interface HexGridEditorState {
-  editMode: string
+  editMode: boolean
   showCoordinates: boolean
   brush: {
     minSize: number
     maxSize: number
     size: number
+    type: string
   }
 }
 
 const initialState: HexGridEditorState = {
-  editMode: "dummy",
+  editMode: true,
   showCoordinates: false,
   brush: {
     minSize: 0,
     maxSize: 5,
-    size: 2,
+    size: 0,
+    type: "dummy",
   },
 }
 
@@ -27,16 +29,22 @@ export const hexGridEditorSlice = createSlice({
   name: "hexGridEditor",
   initialState,
   reducers: {
-    changeEditMode: (state, action: PayloadAction<string>) => {
+    changeEditMode: (state, action: PayloadAction<HexGridEditorState["editMode"]>) => {
       state.editMode = action.payload
     },
-    changeShowCoordinates: (state, action: PayloadAction<boolean>) => {
+    changeShowCoordinates: (
+      state,
+      action: PayloadAction<HexGridEditorState["showCoordinates"]>,
+    ) => {
       state.showCoordinates = action.payload
     },
-    changeBrushSize: (state, action: PayloadAction<number>) => {
+    changeBrushSize: (state, action: PayloadAction<HexGridEditorState["brush"]["size"]>) => {
       const brush = state.brush
       // Clamp the brushSize
       brush.size = Math.min(Math.max(action.payload, brush.minSize), brush.maxSize)
+    },
+    changeBrushType: (state, action: PayloadAction<HexGridEditorState["brush"]["type"]>) => {
+      state.brush.type = action.payload
     },
   },
 })
@@ -49,6 +57,7 @@ const selectBrush = (state: RootState) => state.hexGridEditor.brush
 // Exports
 export { selectEditMode, selectShowCoordinates, selectBrush }
 
-export const { changeEditMode, changeShowCoordinates, changeBrushSize } = hexGridEditorSlice.actions
+export const { changeEditMode, changeShowCoordinates, changeBrushSize, changeBrushType } =
+  hexGridEditorSlice.actions
 
 export default hexGridEditorSlice.reducer
