@@ -5,13 +5,17 @@ import HexCell from "./HexCell"
 import HexCellPriorityQueue from "./HexCellPriorityQueue"
 import HexCoordinate from "./HexCoordinate"
 import HexDirection from "./HexDirection"
-import { innerRadius, outerRadius } from "./HexMetrics"
+import HexGridChunk from "./HexGridChunk"
+import { chunkSizeX, chunkSizeZ, innerRadius, outerRadius } from "./HexMetrics"
 
 export default class HexGrid {
   // Public properties
-  gridContainer: Container
+  container: Container = new Container()
 
   // Private properties
+  private chunks: HexGridChunk[] = []
+  private chunkCountX: number
+  private chunkCountZ: number
   private cellCountX: number
   private cellCountZ: number
   private cells: HexCell[] = []
@@ -28,26 +32,31 @@ export default class HexGrid {
   private currentPathExists = false
 
   // Constructor
-  constructor(width: number, height: number) {
-    this.cellCountX = width
-    this.cellCountZ = height
+  constructor(chunkCountX: number, chunkCountZ: number) {
     // Create the grid
+    this.chunkCountX = chunkCountX
+    this.chunkCountZ = chunkCountZ
+    this.cellCountX = this.chunkCountX * chunkSizeX
+    this.cellCountZ = this.chunkCountZ * chunkSizeZ
+    for (let z = 0, i = 0; z < this.chunkCountZ; z++) {
+      for (let x = 0; x < this.chunkCountX; x++) {
+        const chunk = (this.chunks[i++] = new HexGridChunk())
+        chunk.container.interactive = true
+        this.container.addChild(chunk.container)
+      }
+    }
     for (let z = 0, i = 0; z < this.cellCountZ; z++) {
       for (let x = 0; x < this.cellCountX; x++) {
         this.createCell(x, z, i++)
       }
     }
 
-    // Create a container with each cell's graphic
-    this.gridContainer = new Container()
-    this.cells.forEach((hexCell) => this.gridContainer.addChild(hexCell.draw()))
-
     // Enable interaction
-    this.gridContainer.interactive = true
-    this.gridContainer.on("pointerdown", this.handleInput, this)
-    this.gridContainer.on("pointermove", this.handleInput, this)
-    this.gridContainer.on("pointerup", this.handleInput, this)
-    this.gridContainer.on("pointerout", this.handleInput, this)
+    this.container.interactive = true
+    this.container.on("pointerdown", this.handleInput, this)
+    this.container.on("pointermove", this.handleInput, this)
+    this.container.on("pointerup", this.handleInput, this)
+    this.container.on("pointerout", this.handleInput, this)
 
     // Subscribe to state changes
     observeStore(selectEditMode, (currentEditMode) => (this.editMode = currentEditMode))
@@ -72,8 +81,46 @@ export default class HexGrid {
   }
 
   // Private methods
+  private createCell(x: number, z: number, i: number) {
+    // Screen position in (x,y) space
+    const position = new Point(
+      (x + z * 0.5 - Math.floor(z / 2)) * (innerRadius * 2),
+      z * (outerRadius * 1.5),
+    )
+
+    // Hex coordinate in (x,y,z) space (y is calculated from the others)
+    const coordinate = HexCoordinate.fromOffsetCoordinates(x, z)
+
+    // Create cell and set it up
+    const cell = new HexCell(position, coordinate)
+    if (x > 0) cell.setNeighbor(HexDirection.W, this.cells[i - 1])
+    if (z > 0) {
+      if (z % 2 === 0) {
+        cell.setNeighbor(HexDirection.NE, this.cells[i - this.cellCountX])
+        if (x > 0) cell.setNeighbor(HexDirection.NW, this.cells[i - this.cellCountX - 1])
+      } else {
+        cell.setNeighbor(HexDirection.NW, this.cells[i - this.cellCountX])
+        if (x < this.cellCountX - 1)
+          cell.setNeighbor(HexDirection.NE, this.cells[i - this.cellCountX + 1])
+      }
+    }
+
+    // Add it to the hexGrid and hexChunks
+    this.cells.push(cell)
+    this.addCellToChunk(x, z, cell)
+  }
+
+  private addCellToChunk(x: number, z: number, cell: HexCell) {
+    const chunkX = Math.floor(x / chunkSizeX)
+    const chunkZ = Math.floor(z / chunkSizeZ)
+    const chunk = this.chunks[chunkX + chunkZ * this.chunkCountX]
+    const localX = x - chunkX * chunkSizeX
+    const localZ = z - chunkZ * chunkSizeZ
+    chunk.addCell(localX + localZ * chunkSizeX, cell)
+  }
+
   private handleInput(e: any) {
-    const currentCell = this.positionToCell(e.data.getLocalPosition(this.gridContainer))
+    const currentCell = this.positionToCell(e.data.getLocalPosition(this.container))
     switch (e.type) {
       case "pointerdown":
         this.isDragging = true
@@ -196,34 +243,6 @@ export default class HexGrid {
       }
     }
     return false
-  }
-
-  private createCell(x: number, z: number, i: number) {
-    // Screen position in (x,y) space
-    const position = new Point(
-      (x + z * 0.5 - Math.floor(z / 2)) * (innerRadius * 2),
-      z * (outerRadius * 1.5),
-    )
-
-    // Hex coordinate in (x,y,z) space (y is calculated from the others)
-    const coordinate = HexCoordinate.fromOffsetCoordinates(x, z)
-
-    // Create cell and set it up
-    const cell = new HexCell(position, coordinate)
-    if (x > 0) cell.setNeighbor(HexDirection.W, this.cells[i - 1])
-    if (z > 0) {
-      if (z % 2 === 0) {
-        cell.setNeighbor(HexDirection.NE, this.cells[i - this.cellCountX])
-        if (x > 0) cell.setNeighbor(HexDirection.NW, this.cells[i - this.cellCountX - 1])
-      } else {
-        cell.setNeighbor(HexDirection.NW, this.cells[i - this.cellCountX])
-        if (x < this.cellCountX - 1)
-          cell.setNeighbor(HexDirection.NE, this.cells[i - this.cellCountX + 1])
-      }
-    }
-
-    // Add it to the hexGrid
-    this.cells.push(cell)
   }
 
   private editCells(center: HexCell) {
