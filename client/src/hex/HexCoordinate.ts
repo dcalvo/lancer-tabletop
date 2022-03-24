@@ -1,10 +1,20 @@
 import { Point } from "pixi.js"
+import HexDirection from "./HexDirection"
 import { innerRadius, outerRadius } from "./HexMetrics"
 
 export default class HexCoordinate {
   X: number
   Y: number
   Z: number
+
+  private static directionVectors: HexCoordinate[] = [
+    new HexCoordinate(1, -1),
+    new HexCoordinate(1, 0),
+    new HexCoordinate(0, 1),
+    new HexCoordinate(-1, 1),
+    new HexCoordinate(-1, 0),
+    new HexCoordinate(0, -1),
+  ]
 
   constructor(x: number, z: number) {
     this.X = x
@@ -17,6 +27,18 @@ export default class HexCoordinate {
     return (
       (Math.abs(this.X - other.X) + Math.abs(this.Y - other.Y) + Math.abs(this.Z - other.Z)) / 2
     )
+  }
+
+  add(other: HexCoordinate) {
+    return new HexCoordinate(this.X + other.X, this.Z + other.Z)
+  }
+
+  scale(factor: number) {
+    return new HexCoordinate(this.X * factor, this.Z * factor)
+  }
+
+  static direction(direction: HexDirection) {
+    return this.directionVectors[direction]
   }
 
   static fromOffsetCoordinates(x: number, z: number) {

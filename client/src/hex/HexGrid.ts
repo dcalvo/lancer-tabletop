@@ -62,6 +62,20 @@ export default class HexGrid {
     observeStore(selectEditMode, (currentEditMode) => (this.editMode = currentEditMode))
     observeStore(selectBrush, (currentBrush) => (this.brushSize = currentBrush.size))
     observeStore(selectBrush, (currentBrush) => (this.brushType = currentBrush.type))
+
+    this.cells.forEach((cell) => {
+      // TODO remove
+      if (Math.random() < 0.01) {
+        const MovingUnit = Moves(HexUnit)
+        const hexUnit = new MovingUnit(this, 4)
+        // const hexUnit = new HexUnit(this, 4)
+        // hexUnit.ignoreCollision = true
+        // hexUnit.speed = 2.5
+        this.container.addChild(hexUnit.sprite)
+        this.units.push(hexUnit)
+        hexUnit.occupy(cell)
+      }
+    })
   }
 
   // Public methods
@@ -146,16 +160,6 @@ export default class HexGrid {
     // Add it to the hexGrid and hexChunks
     this.cells.push(cell)
     this.addCellToChunk(x, z, cell)
-    // TODO remove
-    if (Math.random() < 0.3) {
-      const MovingUnit = Moves(HexUnit)
-      const hexUnit = new MovingUnit(this, 1)
-      // const hexUnit = new HexUnit(this, 1)
-      // hexUnit.speed = 2.5
-      this.container.addChild(hexUnit.sprite)
-      this.units.push(hexUnit)
-      hexUnit.occupy(cell)
-    }
   }
 
   private addCellToChunk(x: number, z: number, cell: HexCell) {

@@ -43,7 +43,7 @@ export default class HexCell {
   searchHeuristic = 0
   searchPhase = 0
   nextWithSamePriority: HexCell | null = null
-  private neighbors: HexCell[] = []
+  private neighbors: (HexCell | undefined)[] = []
   private cellLabel: Text
   private highlightSprite = new Sprite()
 
