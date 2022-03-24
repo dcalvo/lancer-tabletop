@@ -1,9 +1,92 @@
-export default class HexUnit {
-  size: number
-  blocking: boolean = false
+import EventEmitter from "eventemitter3"
+import { Graphics, Point, Sprite } from "pixi.js"
+import { app, viewport } from "src/features/Viewport/Viewport"
+import HexCell from "./HexCell"
+import HexGrid from "./HexGrid"
 
-  constructor(size: number) {
-    this.size = size
+// TODO accept texture at Unit creation
+const placeholder = new Graphics()
+placeholder.lineStyle(5, 0xff00ff, 1).beginFill(0x00ff00).drawCircle(0, 0, 15)
+const texture = app.renderer.generateTexture(placeholder)
+
+export default class HexUnit {
+  hexGrid: HexGrid
+  sprite: Sprite = new Sprite()
+  size: number
+  occupiedCells: HexCell[] = []
+  dragging: Point | null = null
+  fromCell: HexCell | null = null
+  toCell: HexCell | null = null
+  emitter: EventEmitter = new EventEmitter()
+
+  constructor(hexGrid: HexGrid, size: number) {
+    this.hexGrid = hexGrid
+    this.size = size // TODO support size 2+ units
+    this.sprite = Sprite.from(texture)
+    this.sprite.anchor.set(0.5, 0.5)
+    this.sprite.interactive = true
+    this.sprite.buttonMode = true
+
+    this.sprite.on("pointerdown", this.pickup, this)
+  }
+
+  // Public methods
+  // Tries to move into a (group of) cell(s). Returns true if successful, false otherwise.
+  occupy(cell: HexCell) {
+    // TODO robust check for size 2+
+    if (cell.containedUnits.length) return false
+    this.unoccupy()
+    this.sprite.position.copyFrom(cell.position)
+    this.occupiedCells.push(cell)
+    cell.containedUnits.push(this)
+    return true
+  }
+
+  unoccupy() {
+    this.occupiedCells.forEach((cell) => {
+      cell.containedUnits = cell.containedUnits.filter((hexUnit) => hexUnit !== this)
+    })
+    this.occupiedCells = []
+  }
+
+  // Private methods
+  private pickup(e: any) {
+    this.fromCell = this.hexGrid.positionToCell(this.sprite.position)
+    this.dragging = e.data.getLocalPosition(this.hexGrid.container) as Point
+    this.sprite.position.copyFrom(this.dragging)
+    this.hexGrid.units.forEach((hexUnit) => (hexUnit.sprite.interactive = false))
+    this.sprite.interactive = true
+
+    this.hexGrid.container.on("pointermove", this.drag, this)
+    this.sprite.on("pointerup", this.drop, this)
+    viewport.on("pointerout", this.drop, this)
+    this.emitter.emit("pickup", e)
+  }
+
+  private drag(e: any) {
+    if (this.dragging) {
+      const newPosition = e.data.getLocalPosition(this.hexGrid.container) as Point
+      this.sprite.position.x += newPosition.x - this.dragging.x
+      this.sprite.position.y += newPosition.y - this.dragging.y
+      this.dragging = newPosition
+      this.emitter.emit("drag", e)
+    }
+  }
+
+  private drop(e: any) {
+    this.dragging = null
+    this.sprite.removeListener("pointermove", this.drag, this)
+    this.sprite.removeListener("pointerup", this.drop, this)
+    viewport.removeListener("pointerout", this.drop, this)
+    this.hexGrid.units.forEach((hexUnit) => (hexUnit.sprite.interactive = true))
+
+    const mousePosition = e.data.getLocalPosition(this.hexGrid.container) as Point
+    const toCell = this.hexGrid.positionToCell(mousePosition)
+    if (e.type === "pointerout" || !toCell || !this.occupy(toCell)) {
+      if (!this.fromCell) throw new Error("Orphan HexUnit, unable to find fromCell at end of drop")
+      this.sprite.position.copyFrom(this.fromCell.position)
+    }
+    this.emitter.emit("drop", e)
   }
 }
 
@@ -12,76 +95,27 @@ type Constructor<I> = new (...args: any[]) => I
 
 // Add a function with access on Base property
 function Moves<T extends Constructor<HexUnit>>(Base: T) {
-  type MovementMode = "walking" | "flying" | "teleporting"
   return class Moves extends Base {
-    movementMode: MovementMode = "walking"
-    move() {
-      console.log(this.size)
-    }
+    speed: number = 1
+    ignoreCollision: boolean = false
 
-    setMovementMode(movementMode: MovementMode) {
-      this.movementMode = movementMode
-    }
-  }
-}
-
-// Change a Base property just by constructing the object
-function Blocks<T extends Constructor<HexUnit>>(Base: T) {
-  return class Moves extends Base {
     constructor(...args: any[]) {
       super(...args)
-      this.blocking = true
+      this.emitter.on("drag", this.findPathOnDrag, this)
+      this.emitter.on("drop", this.clearPathOnDrop, this)
+    }
+
+    private findPathOnDrag(e: any) {
+      const newPosition = e.data.getLocalPosition(this.hexGrid.container) as Point
+      this.toCell = this.hexGrid.positionToCell(newPosition)
+      if (this.fromCell && this.toCell)
+        this.hexGrid.findPath(this.fromCell, this.toCell, this.speed, this.ignoreCollision)
+    }
+
+    private clearPathOnDrop(e: any) {
+      this.hexGrid.clearPath()
     }
   }
 }
 
-// Create commonly used composite classes
-class BlockingUnit extends Blocks(HexUnit) {}
-
-const movingUnit = new (Moves(HexUnit))(2)
-movingUnit.move() // outputs 2
-movingUnit.setMovementMode("teleporting")
-console.log(movingUnit.blocking) // outputs false
-
-const blockingUnit = new BlockingUnit(2)
-console.log(blockingUnit.blocking) // outputs true
-
-const blockingMovingUnit = new (Blocks(Moves(HexUnit)))(5)
-blockingMovingUnit.move() // outputs 5
-console.log(blockingMovingUnit.blocking) // outputs true
-
-// Some other cool stuff
-class MovingUnit extends Moves(HexUnit) {}
-
-// Add a function contingent on another function being present
-function Teleports<T extends Constructor<MovingUnit>>(Base: T) {
-  return class Moves extends Base {
-    teleport() {
-      this.move() // but like really fast
-    }
-  }
-}
-
-class TeleportingUnit extends Teleports(Moves(HexUnit)) {}
-class OtherTeleportingUnit extends Teleports(MovingUnit) {}
-
-// Add a Base property just by constructing the object
-function Foos<T extends Constructor<HexUnit>>(Base: T) {
-  return class Moves extends Base {
-    Foos = 1337
-  }
-}
-
-// Narrow unit's capabilities
-function test(unit: HexUnit | MovingUnit | BlockingUnit | BlockingMovingUnit) {
-  console.log("testing...")
-  if ("move" in unit) {
-    console.log("moving!")
-    if (unit.blocking) {
-      console.log("and blocking!")
-    }
-  }
-}
-test(blockingMovingUnit)
-test(movingUnit)
-test(blockingUnit)
+export { Moves }
