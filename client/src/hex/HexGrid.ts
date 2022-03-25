@@ -7,7 +7,7 @@ import HexCoordinate from "./HexCoordinate"
 import HexDirection from "./HexDirection"
 import HexGridChunk from "./HexGridChunk"
 import { chunkSizeX, chunkSizeZ, innerRadius, outerRadius } from "./HexMetrics"
-import HexUnit, { Moves, Static } from "./HexUnit"
+import HexUnit, { Moves } from "./HexUnit"
 
 export default class HexGrid {
   // Public properties
