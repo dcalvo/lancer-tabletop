@@ -7,7 +7,7 @@ import HexCoordinate from "./HexCoordinate"
 import HexDirection from "./HexDirection"
 import HexGridChunk from "./HexGridChunk"
 import { chunkSizeX, chunkSizeZ, innerRadius, outerRadius } from "./HexMetrics"
-import HexUnit, { Moves } from "./HexUnit"
+import HexUnit, { Moves, Static } from "./HexUnit"
 
 export default class HexGrid {
   // Public properties
@@ -67,10 +67,10 @@ export default class HexGrid {
       // TODO remove
       if (Math.random() < 0.01) {
         const MovingUnit = Moves(HexUnit)
-        const hexUnit = new MovingUnit(this, 4)
-        // const hexUnit = new HexUnit(this, 4)
+        const hexUnit = new MovingUnit(this, 2)
+        // const hexUnit = new HexUnit(this, 3)
+        // const hexUnit = new (Static(HexUnit))(this)
         // hexUnit.ignoreCollision = true
-        // hexUnit.speed = 2.5
         this.container.addChild(hexUnit.sprite)
         this.units.push(hexUnit)
         hexUnit.occupy(cell)

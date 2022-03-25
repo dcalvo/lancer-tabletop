@@ -16,13 +16,13 @@ export default class HexUnit {
   hexGrid: HexGrid
   sprite: Sprite = new Sprite()
   size: number
-  ignoreCollision: boolean = false
+  ignoreCollision: boolean = true
   occupiedCells: HexCell[] = []
   dragging: Point | null = null
   fromCell: HexCell | null = null
   toCell: HexCell | null = null
 
-  constructor(hexGrid: HexGrid, size: number) {
+  constructor(hexGrid: HexGrid, size: number = 1) {
     if (size <= 0) throw new Error("HexUnit size must be positive")
     this.hexGrid = hexGrid
     this.size = size
@@ -44,7 +44,7 @@ export default class HexUnit {
     this.occupiedCells = cells
     cells.forEach((cell) => cell.containedUnits.push(this))
     // TODO remove
-    // cells.forEach((cell) => (cell.color = 0x00ff00))
+    cells.forEach((cell) => (cell.color = 0x00ff00))
     return true
   }
 
@@ -52,6 +52,8 @@ export default class HexUnit {
     this.occupiedCells.forEach((cell) => {
       const index = cell.containedUnits.indexOf(this)
       if (index > -1) cell.containedUnits.splice(index, 1)
+      // TODO remove
+      if (!cell.containedUnits.length) cell.color = undefined
     })
     this.occupiedCells = []
   }
@@ -160,9 +162,9 @@ export default class HexUnit {
 type Constructor<I> = new (...args: any[]) => I
 
 // Add a function with access on Base property
-function Moves<T extends Constructor<HexUnit>>(Base: T) {
+function Moves<T extends Constructor<HexUnit>>(Base: T, speed: number = 1) {
   return class Moves extends Base {
-    speed: number = 1
+    speed: number = speed
 
     constructor(...args: any[]) {
       super(...args)
@@ -183,4 +185,14 @@ function Moves<T extends Constructor<HexUnit>>(Base: T) {
   }
 }
 
-export { Moves }
+function Static<T extends Constructor<HexUnit>>(Base: T) {
+  return class Static extends Base {
+    constructor(...args: any[]) {
+      super(...args)
+      this.sprite.interactive = false
+      this.sprite.removeAllListeners("pointerdown")
+    }
+  }
+}
+
+export { Moves, Static }
