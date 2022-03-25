@@ -7,6 +7,6 @@ export default class HexGridChunk {
 
   addCell(index: number, cell: HexCell) {
     this.cells[index] = cell
-    this.container.addChild(cell.draw())
+    this.container.addChild(cell.cellGraphic)
   }
 }

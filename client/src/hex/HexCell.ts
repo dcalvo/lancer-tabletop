@@ -5,6 +5,7 @@ import HexDirection from "./HexDirection"
 import { observeStore } from "src/store/store"
 import { selectShowCoordinates } from "src/features/HexGridEditor/hexGridEditorSlice"
 import { app } from "src/features/Viewport/Viewport"
+import HexUnit from "./HexUnit"
 
 const highlightGraphic = new Graphics()
 const highlightCorners = getCorners(new Point(0, 0), 0.8)
@@ -28,19 +29,22 @@ function getCorners(position: Point, scale = 1) {
 export default class HexCell {
   position: Point
   coordinate: HexCoordinate
-  impassable = false
+  cellGraphic = new Graphics()
+  containedUnits: HexUnit[] = []
+  private _color: number | undefined = undefined
+  private coordinateLabel: Text
+  private cellCorners: Point[] = []
+
+  // Pathfinding & Terrain properties
+  impassable = false // TODO calculate impassable from "contains" array during occupy/unoccupy
+  movementCost = 1 // TODO calculate movecost from "contains" array during occupy/unoccupy
   distance = Infinity
   pathFrom: HexCell = this
   searchHeuristic = 0
   searchPhase = 0
   nextWithSamePriority: HexCell | null = null
-
-  private neighbors: HexCell[] = []
-  private _color: number | undefined = undefined
+  private neighbors: (HexCell | undefined)[] = []
   private cellLabel: Text
-  private coordinateLabel: Text
-  private cellGraphic = new Graphics()
-  private cellCorners: Point[] = []
   private highlightSprite = new Sprite()
 
   // Constructor
@@ -48,6 +52,7 @@ export default class HexCell {
     this.position = position
     this.coordinate = coordinate
     this.cellCorners = getCorners(this.position)
+    this.cellGraphic.lineStyle(lineWidth, lineColor, lineAlpha).drawPolygon(this.cellCorners)
     this.cellGraphic.hitArea = new Polygon(this.cellCorners)
 
     // Set up Graphics children (but defer adding them)
@@ -82,11 +87,11 @@ export default class HexCell {
 
   set color(value: number | undefined) {
     this._color = value
-    this.draw()
+    this.fill()
   }
 
   get searchPriority() {
-    return this.distance + this.searchHeuristic
+    return Math.round(this.distance + this.searchHeuristic)
   }
 
   getNeighbor(direction: HexDirection) {
@@ -124,7 +129,7 @@ export default class HexCell {
     this.cellGraphic.removeChild(this.coordinateLabel)
   }
 
-  draw() {
+  fill() {
     // Clean up old graphics
     this.cellGraphic.clear()
 

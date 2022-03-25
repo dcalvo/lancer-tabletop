@@ -14,7 +14,7 @@ interface HexGridEditorState {
 }
 
 const initialState: HexGridEditorState = {
-  editMode: true,
+  editMode: false,
   showCoordinates: false,
   brush: {
     minSize: 0,
